@@ -9,7 +9,6 @@ export async function POST(req) {
   const payload = await req.text();
   console.log("🔥 [2] Payload received (length):", payload.length);
 
-  // ✅ IMPORTANT FIX
   const headerPayload = await headers();
 
   const svixHeaders = {
@@ -43,7 +42,8 @@ export async function POST(req) {
     return new Response("Ignored", { status: 200 });
   }
 
-  const { id, email_addresses, image_url, username } = event.data;
+  const { id, email_addresses, image_url, first_name, last_name } = event.data;
+
   const email = email_addresses?.[0]?.email_address;
 
   if (!email) {
@@ -59,7 +59,8 @@ export async function POST(req) {
     {
       clerkUserId: id,
       email,
-      username: username || null,
+      firstname: first_name || null,
+      lastname: last_name || null,
       imageUrl: image_url || null,
     },
     { upsert: true, new: true },
