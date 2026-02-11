@@ -27,3 +27,72 @@ body {
   color: var(--foreground);
   font-family: var(--font-poppins), system-ui, sans-serif;
 }
+/* Hide number input arrows (Chrome, Safari, Edge) */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Hide number input arrows (Firefox) */
+input[type="number"] {
+  -appearance: textfield;
+}
+
+@layer components {
+  .ui-checkbox {
+    @apply relative cursor-pointer appearance-none;
+    width: 20px;
+    height: 20px;
+    border-radius: 5px;
+    border: 1px solid #d9d9d9;
+    background: white;
+    transition: all 0.3s;
+  }
+
+  .ui-checkbox:hover {
+    border-color: #e50177;
+  }
+
+  .ui-checkbox:checked {
+    background: #e50177;
+    border-color: transparent;
+  }
+
+  /* checkmark */
+  .ui-checkbox::before {
+    content: "";
+    position: absolute;
+    top: 40%;
+    left: 50%;
+    width: 4px;
+    height: 7px;
+    border-right: 2px solid white;
+    border-bottom: 2px solid white;
+    transform: translate(-50%, -50%) rotate(45deg) scale(0);
+    opacity: 0;
+    transition: all 0.1s;
+  }
+
+  .ui-checkbox:checked::before {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(45deg) scale(1.2);
+    transition: all 0.2s;
+  }
+
+  /* ripple effect */
+  .ui-checkbox::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: 0 0 0 8px #e50177;
+    opacity: 0;
+    transition: all 0.5s cubic-bezier(0.12, 0.4, 0.29, 1.46);
+  }
+
+  .ui-checkbox:active:not(:checked)::after {
+    opacity: 1;
+    box-shadow: none;
+  }
+}
