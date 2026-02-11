@@ -1,7 +1,11 @@
+"use client";
 import Link from "next/link";
 import { LinkedInLogoIcon } from "@radix-ui/react-icons";
+import { useState } from "react";
+import EditCreatorDetailForm from "@/app/(protected)/components/EditCreatorDetailForm";
 
 export default function CreatorCard({ creator }) {
+  const [editOpen, setEditOpen] = useState(false);
   const displayName =
     creator.firstname || creator.lastname
       ? [creator.firstname, creator.lastname].filter(Boolean).join(" ")
@@ -17,9 +21,27 @@ export default function CreatorCard({ creator }) {
           <div className="text-xs uppercase tracking-[0.24em] text-zinc-400">
             About
           </div>
-          <h2 className="mt-1 text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
-            {displayName}
-          </h2>
+          <div className="flex justify-between">
+            <h2 className="mt-1 flex justify-between text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
+              {displayName}
+            </h2>
+            <button
+              className="underline text-sm text-zinc-600 hover:text-zinc-800 font-medium "
+              onClick={() => setEditOpen(true)}
+            >
+              Edit
+            </button>
+            {editOpen && (
+              <EditCreatorDetailForm
+                creator={creator}
+                onClose={() => setEditOpen(false)}
+                onSave={(data) => {
+                  console.log(data); // call API here
+                  setEditOpen(false);
+                }}
+              />
+            )}
+          </div>
           <p className="mt-3 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
             {creator.bio?.trim()
               ? creator.bio
