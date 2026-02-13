@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
-import dbConnect from "@/dbConnect/dbConnect";
 import User from "@/models/userSchema";
+import dbConnect from "@/dbConnect/dbConnect";
 
 export async function PATCH(req) {
   try {
@@ -14,18 +14,30 @@ export async function PATCH(req) {
 
     await dbConnect();
 
+    // fullname split
+    const nameParts = body.fullname?.trim().split(" ") || [];
+    const firstname = nameParts[0] || "";
+    const lastname = nameParts.slice(1).join(" ") || "";
+
+    const updateData = {
+      firstname,
+      lastname,
+      bio: body.bio,
+      tagline: body.tagline,
+      video: body.video,
+      themeColor: body.themeColor,
+      coffeeName: body.coffeeName,
+      showSupporterCount: body.showSupporterCount,
+    };
+
+    // image update
+    if (body.imageUrl) {
+      updateData.imageUrl = body.imageUrl;
+    }
+
     const updatedUser = await User.findOneAndUpdate(
       { clerkUserId: authUser.id },
-      {
-        firstname: body.fullname?.split(" ")[0] || "",
-        lastname: body.fullname?.split(" ")[1] || "",
-        bio: body.bio,
-        tagline: body.tagline,
-        video: body.video,
-        themeColor: body.themeColor,
-        coffeeName: body.coffeeName,
-        showSupporterCount: body.showSupporterCount,
-      },
+      updateData,
       { new: true },
     ).lean();
 

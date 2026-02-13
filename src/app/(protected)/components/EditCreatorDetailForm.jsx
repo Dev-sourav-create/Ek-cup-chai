@@ -9,6 +9,8 @@ import { CldUploadButton } from "next-cloudinary";
 
 export default function EditCreatorDetailForm({ creator, onClose, onSave }) {
   const [isopen, setisopen] = useState(false);
+  const [uploadedImage, setUploadedImage] = useState(creator.imageUrl || "");
+
   if (typeof window === "undefined") return null;
 
   //theme colors
@@ -43,7 +45,10 @@ export default function EditCreatorDetailForm({ creator, onClose, onSave }) {
 
   async function submit(data) {
     try {
-      const res = await api.patch("/users/updateUserInfo", data);
+      const res = await api.patch("/users/updateUserInfo", {
+        ...data,
+        imageUrl: uploadedImage, // ⭐ send image
+      });
 
       onSave(res.data.user);
       onClose();
@@ -89,8 +94,13 @@ export default function EditCreatorDetailForm({ creator, onClose, onSave }) {
 
               <div className="flex items-center gap-4">
                 <div className="relative h-20 w-20 overflow-hidden rounded-xl bg-zinc-200">
-                  {creator.imageUrl && (
-                    <Image src={creator.imageUrl} fill alt="" />
+                  {(uploadedImage || creator.imageUrl) && (
+                    <Image
+                      src={uploadedImage || creator.imageUrl}
+                      fill
+                      alt=""
+                      className="object-cover"
+                    />
                   )}
                 </div>
 
@@ -98,14 +108,11 @@ export default function EditCreatorDetailForm({ creator, onClose, onSave }) {
                   signatureEndpoint="/api/cloudinary-signature"
                   options={{
                     folder: "ekcupchai/profile-images",
-                    resourceType: "image",
                   }}
                   onSuccess={(result) => {
-                    console.log(result.info.secure_url);
+                    setUploadedImage(result.info.secure_url);
                   }}
-                >
-                  Upload
-                </CldUploadButton>
+                />
               </div>
             </section>
 
