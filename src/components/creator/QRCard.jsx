@@ -5,6 +5,8 @@ import { HelpCircle, ExternalLink } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import QRCode from "qrcode";
 import InputCheckBox from "@/app/(protected)/components/InputCheckBox";
+import { useCreator, useSupporters, useAppDispatch } from "@/store/hooks";
+import { createSupporter } from "@/store/slices/supportersSlice";
 
 const PRICE_PER_CHAI = 50;
 const PRESETS = [1, 2, 5];
@@ -18,11 +20,31 @@ const isMobileDevice = () =>
   typeof navigator !== "undefined" &&
   /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-export default function QRCard({ upiId, creatorName, creatorUsername, qrImageUrl }) {
+export default function QRCard({
+  upiId: propUpiId,
+  creatorName: propCreatorName,
+  creatorUsername: propCreatorUsername,
+  qrImageUrl: propQrImageUrl,
+}) {
   const [upiLink, setUpiLink] = useState("");
   const [qrDataUrl, setQrDataUrl] = useState("");
   const [apiError, setApiError] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const dispatch = useAppDispatch();
+  
+  // Use Redux if props not provided
+  const creatorState = useCreator();
+  const creator = creatorState.viewedCreator || creatorState.currentCreator;
+  const supportersState = useSupporters();
+  
+  const upiId = propUpiId || creator?.upiId;
+  const creatorName = propCreatorName || 
+    (creator?.firstname || creator?.lastname
+      ? [creator.firstname, creator.lastname].filter(Boolean).join(" ")
+      : creator?.username);
+  const creatorUsername = propCreatorUsername || creator?.username;
+  const qrImageUrl = propQrImageUrl || creator?.qrImageUrl;
+  
+  const isSubmitting = supportersState.creating;
 
   const { register, handleSubmit, setValue, watch, reset } = useForm({
     defaultValues: {
@@ -58,37 +80,25 @@ export default function QRCard({ upiId, creatorName, creatorUsername, qrImageUrl
     }
 
     setApiError("");
-    setIsSubmitting(true);
     try {
-      const response = await fetch("/api/supporters", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const result = await dispatch(
+        createSupporter({
           username: creatorUsername,
           name: data.name,
           message: data.message,
           isPrivate: data.private,
           chaiCount: Math.max(1, data.chaiCount || 1),
-        }),
-      });
+        })
+      ).unwrap();
 
-      const payload = await response.json();
-      if (!response.ok) {
-        setApiError(payload.error || "Unable to start payment.");
-        setIsSubmitting(false);
-        return;
-      }
-
-      setUpiLink(payload.upiLink || "");
+      setUpiLink(result.upiLink || "");
       reset({ ...data, message: "" });
 
-      if (payload.upiLink && isMobileDevice()) {
-        window.location.href = payload.upiLink;
+      if (result.upiLink && isMobileDevice()) {
+        window.location.href = result.upiLink;
       }
     } catch (err) {
-      setApiError("Network error. Please try again.");
-    } finally {
-      setIsSubmitting(false);
+      setApiError(err || "Unable to start payment.");
     }
   };
 

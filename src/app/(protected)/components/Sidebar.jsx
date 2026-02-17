@@ -1,26 +1,44 @@
+"use client";
+
 import Link from "next/link";
 import { Home, Heart, Lock, ShoppingBag, Pencil, Settings } from "lucide-react";
-import { currentUser } from "@clerk/nextjs/server";
-import dbConnect from "@/dbConnect/dbConnect";
-import User from "@/models/userSchema";
-import { redirect } from "next/navigation";
 import { ExternalLink, Table2, Grip } from "lucide-react";
+import { useUser } from "@/store/hooks";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAppDispatch } from "@/store/hooks";
+import { fetchCurrentUser } from "@/store/slices/userSlice";
 
-export default async function Sidebar() {
-  const user = await currentUser();
-  if (!user) redirect("/sign-in");
+export default function Sidebar() {
+  const user = useUser();
+  const router = useRouter();
+  const dispatch = useAppDispatch();
 
-  await dbConnect();
+  useEffect(() => {
+    // Fetch user data if not loaded
+    if (!user.dbUser && user.isAuthenticated) {
+      dispatch(fetchCurrentUser());
+    }
+  }, [user.dbUser, user.isAuthenticated, dispatch]);
 
-  const userDb = await User.findOne({ clerkUserId: user.id });
-  if (!userDb || !userDb.onboardingCompleted) redirect("/complete-your-page");
+  useEffect(() => {
+    // Redirect if not authenticated
+    if (!user.isAuthenticated) {
+      router.push("/sign-in");
+    } else if (user.dbUser && !user.dbUser.onboardingCompleted) {
+      router.push("/complete-your-page");
+    }
+  }, [user.isAuthenticated, user.dbUser, router]);
 
-  const displayName =
-    userDb.firstname || userDb.lastname
-      ? [userDb.firstname, userDb.lastname].filter(Boolean).join(" ")
-      : userDb.username || "Creator";
+  // Show loading state or nothing while checking auth
+  if (!user.isAuthenticated || !user.dbUser) {
+    return null;
+  }
 
-  const pageUrl = userDb.username ? `/ekcupchai/${userDb.username}` : null;
+  const pageUrl = user.dbUser?.username
+    ? `/creatorPage/${user.dbUser.username}`
+    : null;
+  console.log(pageUrl);
 
   return (
     <aside className="hidden md:block h-screen w-64 border-r border-black/5 bg-zinc-50 p-4 dark:border-white/10 dark:bg-zinc-900">
@@ -35,7 +53,6 @@ export default async function Sidebar() {
         {pageUrl && (
           <Link
             href={pageUrl}
-            target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-3 w-full py-2.5 rounded-lg px-6 hover:bg-black/5 dark:hover:bg-white/10"
           >

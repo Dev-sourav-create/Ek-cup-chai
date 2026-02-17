@@ -4,10 +4,14 @@ import Image from "next/image";
 import { createPortal } from "react-dom";
 import { useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
-import api from "@/lib/axio";
 import { CldUploadButton } from "next-cloudinary";
+import { useAppDispatch, useUser } from "@/store/hooks";
+import { updateUserInfo } from "@/store/slices/userSlice";
 
-export default function EditCreatorDetailForm({ creator, onClose, onSave }) {
+export default function EditCreatorDetailForm({ onClose }) {
+  const user = useUser();
+  const dispatch = useAppDispatch();
+  const creator = user.dbUser;
   const [isopen, setisopen] = useState(false);
   const [uploadedImage, setUploadedImage] = useState(creator.imageUrl || "");
 
@@ -45,15 +49,15 @@ export default function EditCreatorDetailForm({ creator, onClose, onSave }) {
 
   async function submit(data) {
     try {
-      const res = await api.patch("/users/updateUserInfo", {
-        ...data,
-        imageUrl: uploadedImage, // ⭐ send image
-      });
-
-      onSave(res.data.user);
+      await dispatch(
+        updateUserInfo({
+          ...data,
+          imageUrl: uploadedImage,
+        })
+      ).unwrap();
       onClose();
     } catch (err) {
-      console.log(err.response?.data?.error);
+      console.error("Failed to update user:", err);
     }
   }
 
@@ -105,6 +109,7 @@ export default function EditCreatorDetailForm({ creator, onClose, onSave }) {
                 </div>
 
                 <CldUploadButton
+                  className="px-4 py-2 border border-gray-300 rounded-4xl hover:bg-zinc-100 transition-colors"
                   signatureEndpoint="/api/cloudinary-signature"
                   options={{
                     folder: "ekcupchai/profile-images",

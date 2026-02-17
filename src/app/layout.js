@@ -1,7 +1,7 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import { Geist_Mono, Pacifico, Poppins } from "next/font/google";
 import "./globals.css";
-
+import { ReduxProvider } from "@/store/ReduxProvider";
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
@@ -31,8 +31,10 @@ export default function RootLayout({ children }) {
             font-sans antialiased
           `}
         >
-          {children}
-          <div id="modal-root" />
+          <ReduxProvider>
+            {children}
+            <div id="modal-root" />
+          </ReduxProvider>
         </body>
       </html>
     </ClerkProvider>

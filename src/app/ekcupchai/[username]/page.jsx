@@ -2,16 +2,16 @@ import { notFound } from "next/navigation";
 import dbConnect from "@/dbConnect/dbConnect";
 import User from "@/models/userSchema";
 import Supporter from "@/models/supporterSchema";
-import CreatorCard from "@/components/creator/CreatorCard";
-import QRCard from "@/components/creator/QRCard";
-import SupportersList from "@/components/creator/SupportersList";
 import { ImageUp } from "lucide-react";
+import CreatorPageClient from "./CreatorPageClient";
 
 export async function generateMetadata({ params }) {
   const { username } = await params;
+
   await dbConnect();
+
   const creator = await User.findOne({
-    username: username?.toLowerCase(),
+    username: username.toLowerCase(),
     onboardingCompleted: true,
   }).lean();
 
@@ -20,7 +20,7 @@ export async function generateMetadata({ params }) {
   const displayName =
     creator.firstname || creator.lastname
       ? [creator.firstname, creator.lastname].filter(Boolean).join(" ")
-      : creator.username || "Creator";
+      : creator.username;
 
   return {
     title: `${displayName} | Ek Cup Chai`,
@@ -33,6 +33,7 @@ export default async function CreatorPage({ params }) {
   if (!username) notFound();
 
   await dbConnect();
+
   const creator = await User.findOne({
     username: username.toLowerCase(),
     onboardingCompleted: true,
@@ -48,47 +49,39 @@ export default async function CreatorPage({ params }) {
   const displayName =
     creator.firstname || creator.lastname
       ? [creator.firstname, creator.lastname].filter(Boolean).join(" ")
-      : creator.username || "Creator";
+      : creator.username;
 
   return (
     <div className="mx-auto max-w-6xl px-6 font-poppins">
-      <div className="my-4 flex min-h-36 w-full items-center justify-between rounded-4xl bg-gradient-to-r from-amber-100 via-orange-50 to-rose-100 px-6 py-6">
+      {/* Header */}
+      <div className="my-4 flex min-h-36 items-center justify-between rounded-4xl bg-linear-to-r from-amber-100 via-orange-50 to-rose-100 px-6 py-6">
         <div>
           <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">
             Support
           </p>
-          <h1 className="mt-2 text-2xl font-semibold text-zinc-900">
-            {displayName}
-          </h1>
+          <h1 className="mt-2 text-2xl font-semibold">{displayName}</h1>
         </div>
-        <span className="hidden items-center gap-2 rounded-full bg-white/80 px-3 py-2 text-sm font-medium text-zinc-600 shadow-sm sm:inline-flex">
+        <span className="hidden sm:inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-2 text-sm shadow">
           <ImageUp size={16} /> Cover coming soon
         </span>
       </div>
-      <div className="grid gap-8 lg:grid-cols-[1fr_1fr] lg:gap-12">
-        <aside className="lg:sticky lg:top-28 lg:self-start">
-          <CreatorCard creator={creator} />
-        </aside>
 
-        <div className="flex flex-col gap-6">
-          <QRCard
-            upiId={creator.upiId}
-            creatorName={displayName}
-            creatorUsername={creator.username}
-            qrImageUrl={creator.qrImageUrl}
-          />
-          <SupportersList
-            supporters={supporters.map((supporter) => ({
-              id: supporter._id.toString(),
-              name: supporter.name,
-              message: supporter.message,
-              amount: supporter.amount,
-              isPrivate: supporter.isPrivate,
-              createdAt: supporter.createdAt,
-            }))}
-          />
-        </div>
-      </div>
+      <CreatorPageClient
+        username={username.toLowerCase()}
+        initialCreator={{
+          ...creator,
+          _id: creator._id.toString(),
+          createdAt: creator.createdAt?.toISOString?.() ?? null,
+          updatedAt: creator.updatedAt?.toISOString?.() ?? null,
+        }}
+        initialSupporters={supporters.map((s) => ({
+          id: s._id.toString(),
+          name: s.name,
+          message: s.message,
+          amount: s.amount,
+          isPrivate: s.isPrivate,
+        }))}
+      />
     </div>
   );
 }

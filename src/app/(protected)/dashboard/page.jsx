@@ -1,26 +1,49 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
-import { currentUser } from "@clerk/nextjs/server";
-import dbConnect from "@/dbConnect/dbConnect";
-import User from "@/models/userSchema";
-import { redirect } from "next/navigation";
 import { Share, Heart, ArrowRight } from "lucide-react";
 import DropDownMenu from "../components/DropDownMenu";
 import { Footer } from "./component/Footer";
+import { useUser } from "@/store/hooks";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAppDispatch } from "@/store/hooks";
+import { fetchCurrentUser } from "@/store/slices/userSlice";
 
-export default async function DashboardPage() {
-  const user = await currentUser();
-  if (!user) redirect("/sign-in");
+export default function DashboardPage() {
+  const user = useUser();
+  const router = useRouter();
+  const dispatch = useAppDispatch();
 
-  await dbConnect();
-  const userDb = await User.findOne({ clerkUserId: user.id });
-  if (!userDb || !userDb.onboardingCompleted) redirect("/complete-your-page");
+  useEffect(() => {
+    // Fetch user data if not loaded
+    if (!user.dbUser && user.isAuthenticated) {
+      dispatch(fetchCurrentUser());
+    }
+  }, [user.dbUser, user.isAuthenticated, dispatch]);
 
-  const displayName =
-    userDb.firstname || userDb.lastname
-      ? [userDb.firstname, userDb.lastname].filter(Boolean).join(" ")
-      : userDb.username || "Creator";
-  const pageUrl = userDb.username ? `/ekcupchai/${userDb.username}` : null;
+  useEffect(() => {
+    // Redirect if not authenticated
+    if (!user.isAuthenticated) {
+      router.push("/sign-in");
+    } else if (user.dbUser && !user.dbUser.onboardingCompleted) {
+      router.push("/complete-your-page");
+    }
+  }, [user.isAuthenticated, user.dbUser, router]);
+
+  // Show loading state
+  if (!user.isAuthenticated || !user.dbUser) {
+    return (
+      <div className="min-h-screen bg-zinc-100 dark:bg-zinc-950 flex items-center justify-center">
+        <p className="text-zinc-500">Loading...</p>
+      </div>
+    );
+  }
+
+  const pageUrl = user.dbUser?.username
+    ? `/ekcupchai/${user.dbUser.username}`
+    : null;
 
   return (
     <div className=" min-h-screen bg-zinc-100  dark:bg-zinc-950">
@@ -29,25 +52,25 @@ export default async function DashboardPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="relative h-18 w-18 overflow-hidden rounded-full bg-zinc-200">
-              {userDb.imageUrl ? (
+              {user.dbUser.imageUrl ? (
                 <Image
-                  src={userDb.imageUrl}
-                  alt={displayName}
+                  src={user.dbUser.imageUrl}
+                  alt={user.displayName}
                   fill
                   className="object-cover"
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center font-semibold">
-                  {displayName.charAt(0)}
+                  {user.displayName.charAt(0)}
                 </div>
               )}
             </div>
 
             <div>
-              <h2 className="text-lg font-semibold">Hi, {displayName}</h2>
-              {userDb.username && (
+              <h2 className="text-lg font-semibold">Hi, {user.displayName}</h2>
+              {user.dbUser.username && (
                 <p className="text-sm text-zinc-500">
-                  ekcupchai.com/{userDb.username}
+                  ekcupchai.com/{user.dbUser.username}
                 </p>
               )}
             </div>

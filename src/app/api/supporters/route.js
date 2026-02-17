@@ -123,13 +123,7 @@ export async function GET(req) {
     const username = String(searchParams.get("username") || "")
       .trim()
       .toLowerCase();
-
-    if (!username) {
-      return NextResponse.json(
-        { error: "Creator username is required." },
-        { status: 400 },
-      );
-    }
+    const creatorId = searchParams.get("creatorId");
 
     const limit = Math.min(
       20,
@@ -138,10 +132,29 @@ export async function GET(req) {
 
     await dbConnect();
 
-    const creator = await User.findOne({
-      username,
-      onboardingCompleted: true,
-    }).lean();
+    let creator;
+    if (creatorId) {
+      // Fetch by creatorId (for Redux)
+      const mongoose = require("mongoose");
+      if (!mongoose.Types.ObjectId.isValid(creatorId)) {
+        return NextResponse.json(
+          { error: "Invalid creator ID." },
+          { status: 400 },
+        );
+      }
+      creator = await User.findById(creatorId).lean();
+    } else if (username) {
+      // Fetch by username (existing behavior)
+      creator = await User.findOne({
+        username,
+        onboardingCompleted: true,
+      }).lean();
+    } else {
+      return NextResponse.json(
+        { error: "Creator username or creatorId is required." },
+        { status: 400 },
+      );
+    }
 
     if (!creator) {
       return NextResponse.json(

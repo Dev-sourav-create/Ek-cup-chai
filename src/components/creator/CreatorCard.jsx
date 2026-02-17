@@ -3,13 +3,20 @@ import Link from "next/link";
 import { LinkedInLogoIcon } from "@radix-ui/react-icons";
 import { useState } from "react";
 import EditCreatorDetailForm from "@/app/(protected)/components/EditCreatorDetailForm";
+import { useUser, useCreator } from "@/store/hooks";
 
-export default function CreatorCard({ creator }) {
+export default function CreatorCard({ creator: propCreator, editable = false }) {
   const [editOpen, setEditOpen] = useState(false);
+  const user = useUser();
+  const creatorState = useCreator();
+  
+  // Use prop creator if provided (for viewing other creators), otherwise use Redux state
+  const creator = propCreator || creatorState.currentCreator || user.dbUser;
+  
   const displayName =
-    creator.firstname || creator.lastname
+    creator?.firstname || creator?.lastname
       ? [creator.firstname, creator.lastname].filter(Boolean).join(" ")
-      : creator.username || "Creator";
+      : creator?.username || "Creator";
 
   return (
     <article
@@ -43,7 +50,7 @@ export default function CreatorCard({ creator }) {
             )}
           </div>
           <p className="mt-3 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-            {creator.bio?.trim()
+            {creator?.bio?.trim()
               ? creator.bio
               : "This creator has not added a bio yet."}
           </p>
