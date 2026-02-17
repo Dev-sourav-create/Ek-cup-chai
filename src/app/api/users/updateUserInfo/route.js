@@ -34,7 +34,9 @@ export async function PATCH(req) {
     if (body.imageUrl) {
       updateData.imageUrl = body.imageUrl;
     }
-
+    if (body.coverImage) {
+      updateData.coverImage = body.coverImage;
+    }
     const updatedUser = await User.findOneAndUpdate(
       { clerkUserId: authUser.id },
       updateData,

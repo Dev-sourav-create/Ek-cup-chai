@@ -6,9 +6,15 @@ import CreatorCard from "@/components/creator/CreatorCard";
 import QRCard from "@/components/creator/QRCard";
 import SupportersList from "@/components/creator/SupportersList";
 import { Header } from "../components/Header";
-import { useUser, useCreator, useSupporters, useAppDispatch } from "@/store/hooks";
+import {
+  useUser,
+  useCreator,
+  useSupporters,
+  useAppDispatch,
+} from "@/store/hooks";
 import { fetchCurrentCreator } from "@/store/slices/creatorSlice";
 import { fetchSupporters } from "@/store/slices/supportersSlice";
+import { CoverImageSection } from "../components/CoverImageSection";
 
 export default function PrivateCreatorPage({ params }) {
   const router = useRouter();
@@ -18,12 +24,6 @@ export default function PrivateCreatorPage({ params }) {
   const supportersState = useSupporters();
 
   useEffect(() => {
-    // Redirect if not authenticated
-    if (!user.isAuthenticated) {
-      router.push("/sign-in");
-      return;
-    }
-
     // Fetch creator data
     if (!creatorState.currentCreator && user.isAuthenticated) {
       dispatch(fetchCurrentCreator());
@@ -32,15 +32,22 @@ export default function PrivateCreatorPage({ params }) {
 
   useEffect(() => {
     // Fetch supporters when creator is loaded
-    if (creatorState.currentCreator?._id && !supportersState.supporters.length) {
+    if (
+      creatorState.currentCreator?._id &&
+      !supportersState.supporters.length
+    ) {
       dispatch(
         fetchSupporters({
           creatorId: creatorState.currentCreator._id,
           limit: 8,
-        })
+        }),
       );
     }
-  }, [creatorState.currentCreator, supportersState.supporters.length, dispatch]);
+  }, [
+    creatorState.currentCreator,
+    supportersState.supporters.length,
+    dispatch,
+  ]);
 
   // Show loading state
   if (!user.isAuthenticated || !creatorState.currentCreator) {
@@ -57,24 +64,15 @@ export default function PrivateCreatorPage({ params }) {
       ? [creator.firstname, creator.lastname].filter(Boolean).join(" ")
       : creator.username;
 
+  console.log(creator);
+
   return (
     <div className="w-full font-poppins">
       {/* FULL WIDTH HEADER */}
       <Header />
 
       {/* FULL WIDTH COVER IMAGE */}
-      <div className="relative w-full flex  items-center justify-center md:h-54 bg-linear-to-r from-amber-100 via-orange-50 to-rose-100">
-        <button className="px-6 py-2 text-sm font-medium bg-white border text-zinc-600 hover:text-black/90 border-gray-200 hover:bg-zinc-100 transition-colors shadow-sm rounded-lg">
-          Add cover image
-        </button>
-        {creator.coverImage && (
-          <img
-            src={creator.coverImage}
-            alt="cover"
-            className="absolute inset-0 h-full w-full object-cover"
-          />
-        )}
-      </div>
+      <CoverImageSection creator={creator} />
 
       {/* MAIN CONTENT (OVERLAPPED) */}
       <div className="relative -mt-16 mx-auto max-w-6xl px-6 pb-10">

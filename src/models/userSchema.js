@@ -26,6 +26,10 @@ const userSchema = new mongoose.Schema(
     firstname: String,
     lastname: String,
     imageUrl: String,
+    coverImage: {
+      type: String,
+      default: "",
+    },
     bio: { type: String, default: "" },
     country: { type: String, default: "" },
     upiId: { type: String, default: "" },
